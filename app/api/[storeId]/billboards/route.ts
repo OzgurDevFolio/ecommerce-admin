@@ -1,24 +1,34 @@
-import prismadb from '@/lib/prismadb'
-import { auth } from '@clerk/nextjs'
 import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs'
+
+import prismadb from '@/lib/prismadb'
 
 export async function POST(req: Request, { params }: { params: { storeId: string } }) {
     try {
         const { userId } = auth()
+
         const body = await req.json()
 
         const { label, imageUrl } = body
 
-        if (!userId) return new NextResponse('Unauthenticated', { status: 401 })
+        if (!userId) {
+            return new NextResponse('Unauthenticated', { status: 403 })
+        }
 
-        if (!label) return new NextResponse('Label is required', { status: 400 })
+        if (!label) {
+            return new NextResponse('Label is required', { status: 400 })
+        }
 
-        if (!imageUrl) return new NextResponse('Image URL is required', { status: 400 })
+        if (!imageUrl) {
+            return new NextResponse('Image URL is required', { status: 400 })
+        }
 
-        if (!params.storeId) return new NextResponse('Store Id is required', { status: 400 })
+        if (!params.storeId) {
+            return new NextResponse('Store id is required', { status: 400 })
+        }
 
         /** @ts-ignore */
-        const storeByUserId = await prisma.store.findFirst({
+        const storeByUserId = await prismadb.store.findFirst({
             where: {
                 id: params.storeId,
                 userId,
@@ -26,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { storeId: string
         })
 
         if (!storeByUserId) {
-            return new NextResponse('Unauthorized', { status: 403 })
+            return new NextResponse('Unauthorized', { status: 405 })
         }
 
         /** @ts-ignore */
@@ -47,10 +57,11 @@ export async function POST(req: Request, { params }: { params: { storeId: string
 
 export async function GET(req: Request, { params }: { params: { storeId: string } }) {
     try {
-        if (!params.storeId) return new NextResponse('Store id is required', { status: 400 })
+        if (!params.storeId) {
+            return new NextResponse('Store id is required', { status: 400 })
+        }
 
         /** @ts-ignore */
-
         const billboards = await prismadb.billboard.findMany({
             where: {
                 storeId: params.storeId,
